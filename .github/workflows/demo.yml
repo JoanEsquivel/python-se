@@ -25,7 +25,7 @@ jobs:
       - name: Set output
         if: success() || failure()
         id: results
-        run: echo "artifactPath=reports/reports.html" >> $GITHUB_OUTPUT
+        run: echo "artifactPath=tests/reports/reports.html" >> $GITHUB_OUTPUT
 
       - uses: actions/upload-artifact@v3
         if: success() || failure()
