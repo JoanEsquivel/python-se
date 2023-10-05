@@ -22,7 +22,7 @@ class TestLoginpage:
 
         # URL Validation
         actual_url = driver.current_url
-        assert actual_url == "https://www.saucedemo.com/inventory.htmls"
+        assert actual_url == "https://www.saucedemo.com/inventory.html"
 
         # time.sleep(2)
 
