@@ -152,6 +152,20 @@ Check this example where the same example is going to be executed twice with two
 
 ```
 
+### Let's add a report library
+Library: https://pypi.org/project/pytest-html/
+
+If you want to add the report just add to the "requirements.txt" the following line(check the version you want to implement):
+```
+    pytest-html==4.0.2
+```
+#### How to configure it in your PyCharm?
+- Create a folder named "reports"
+- Add to the execution the following "Additional Arguments":
+```
+    --html=reports/automation-report-(BROWSER)-.html
+```
+
 ## Contributing
 
 Contributions are always welcome!
