@@ -28,7 +28,7 @@ class TestLoginpage:
 
     @pytest.mark.parametrize("username, password, error", [
         ("locked_out_user", "secret_sauce", "Epic sadface: Sorry, this user has been locked out."),
-        ("invalidUser", "invalidPass", "Epic sadface: Username and password do not match any user in this services")])
+        ("invalidUser", "invalidPass", "Epic sadface: Username and password do not match any user in this service")])
     def test_invalid_login(self, driver, username, password, error):
         driver.get("https://www.saucedemo.com/")
         # time.sleep(2)
