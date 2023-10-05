@@ -18,7 +18,8 @@ jobs:
         if: success() || failure()
       - run: |
           cd tests
-          pytest test_login_page.py --browser=chrome --html=reports/automation-report-chrome.html
+          mkdir -p reports
+          pytest test_login_page.py --browser=chrome --html=reports/reports.html
           chmod 777  /home/runner/work/python-se/python-se/reports/reports.html
 
       - name: Set output
