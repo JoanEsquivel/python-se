@@ -166,6 +166,19 @@ If you want to add the report just add to the "requirements.txt" the following l
     --html=reports/automation-report-(BROWSER)-.html
 ```
 
+### How to run our test from the command line? 
+It is easy, use this command as example: 
+```
+pytest test_login_page.py --browser=chrome --html=reports/automation-report-chrome.html
+pytest test_login_page.py --browser=firefox --html=reports/automation-report-firefox.html
+```
+
+### How to install requirements?
+Use the following command: 
+```
+pip install -r requirements.txt
+```
+
 ## Contributing
 
 Contributions are always welcome!
