@@ -18,6 +18,11 @@ This is a set of instructions to set Selenium with Python for the first time:
 ```bash
   py -m pip install --user virtualenv
 ```
+- Create a new virtual environment
+
+```
+   python -m venv se-python-env
+```
 
 - Activate it
 
