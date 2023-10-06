@@ -3,7 +3,7 @@ import pytest
 from selenium.webdriver.common.by import By
 
 
-class TestLoginpage:
+class TestLoginPage:
     def test_valid_login(self, driver):
         driver.get("https://www.saucedemo.com/")
         # time.sleep(2)
@@ -22,7 +22,7 @@ class TestLoginpage:
 
         # URL Validation
         actual_url = driver.current_url
-        assert actual_url == "https://www.saucedemo.com/inventory.html"
+        assert actual_url == "https://www.saucedemo.com/inventory.htmls"
 
         # time.sleep(2)
 
