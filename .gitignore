@@ -1,0 +1,3 @@
+tests/reports
+.pytest_cache
+
