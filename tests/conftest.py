@@ -34,6 +34,8 @@ def driver(request):
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     elif browser == "firefox":
         driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
+    # Implicit wait setup for our framework
+    driver.implicitly_wait(10)
     yield driver
     # Tear down
     print(f"\nTear down: {browser} driver")

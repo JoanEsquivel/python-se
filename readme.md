@@ -80,20 +80,25 @@ activate
 
 ```
   @pytest.fixture()
-  def driverSetup(request):
-      browser = request.config.getOption("--browser")
-      # Default driver value
-      driver = "chrome"
-      # Setup
-      print(f"Setting up: {browser} driver")
-      if browser == "chrome":
-          driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
-      elif browser == "firefox":
-          driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
-      yield driver
-      # Tear down
-      print(f"Tear down: {browser} driver")
-      driver.quit()
+    def driver(request):
+        browser = request.config.getoption("--browser")
+        # Default driver value
+        driver = "chrome"
+        # Option setup to run in headless mode (in order to run this in GH Actions)
+        options = Options()
+        options.add_argument('--headless')
+        # Setup
+        print(f"\nSetting up: {browser} driver")
+        if browser == "chrome":
+            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        elif browser == "firefox":
+            driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
+        # Implicit wait setup for our framework
+        driver.implicitly_wait(10)
+        yield driver
+        # Tear down
+        print(f"\nTear down: {browser} driver")
+        driver.quit()
 ```
 
 ### Type, Click, and validate URL example
@@ -178,6 +183,10 @@ Use the following command:
 ```
 pip install -r requirements.txt
 ```
+
+### GitHub Action Integration
+Check the yml file I created to run our project in GH Actions. 
+It is amazing, isn't it?
 
 ## Contributing
 
