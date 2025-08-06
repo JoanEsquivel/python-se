@@ -2,17 +2,8 @@
 import pytest
 from selenium import webdriver
 
-# Imports to get chrome driver working
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-
-# Imports to get firefox driver working
-from selenium.webdriver.firefox.service import Service as FirefoxService
-from webdriver_manager.firefox import GeckoDriverManager
-
-# Imports to get edge driver working
-from selenium.webdriver.edge.service import Service as EdgeService
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
+# Modern Selenium 4.6+ approach: Selenium Manager handles drivers automatically
+import os
 
 # Import options for headless mode
 from selenium.webdriver.chrome.options import Options
@@ -35,11 +26,15 @@ def driver(request):
     # Setup
     print(f"\nSetting up: {browser} driver")
     if browser == "chrome":
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        # Modern approach: Use Selenium Manager (no webdriver-manager needed)
+        driver = webdriver.Chrome(options=options)
     elif browser == "firefox":
-        driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
+        # Modern approach: Use Selenium Manager (no webdriver-manager needed)
+        driver = webdriver.Firefox()
     elif browser == "edge":
-        driver = webdriver.Edge(service=EdgeService(EdgeChromiumDriverManager().install()))
+        # Modern approach: Use Selenium Manager with Microsoft's official mirror
+        os.environ["SE_DRIVER_MIRROR_URL"] = "https://msedgedriver.microsoft.com"
+        driver = webdriver.Edge()
     # Implicit wait setup for our framework
     driver.implicitly_wait(10)
     yield driver
