@@ -12,10 +12,6 @@ class TestLoginPage:
         """Test using find_element_by_role (singular) - cleaner and more direct"""
         driver.get("https://v0-imagine-deals.vercel.app")
         
-        # Wait for page to fully load
-        import time
-        time.sleep(3)
-        
         # Find and fill username field (using singular function)
         username_input = find_element_by_role(driver, "textbox", name="Username")
         username_input.send_keys("test_user")
@@ -33,10 +29,6 @@ class TestLoginPage:
     def test_login_using_plural_function(self, driver):
         """Test using find_elements_by_role (plural) - more explicit about multiple elements"""
         driver.get("https://v0-imagine-deals.vercel.app")
-        
-        # Wait for page to fully load
-        import time
-        time.sleep(3)
         
         # Find and fill username field (using plural function)
         username_elements = find_elements_by_role(driver, "textbox", name="Username")
@@ -64,22 +56,3 @@ class TestLoginPage:
         
         # Verify we can find multiple elements of the same type
         assert len(all_buttons) >= 2, "Expected at least 2 buttons on the page"
-
-
-        # # Type username
-        # username_input = driver.find_element(By.ID, "user-name")
-        # username_input.send_keys("standard_user")
-
-        # # Type password
-        # password_input = driver.find_element(By.ID, "password")
-        # password_input.send_keys("secret_sauce")
-
-        # # Click on the login button
-        # login_btn = driver.find_element(By.ID, "login-button")
-        # login_btn.click()
-
-        # # URL Validation
-        # actual_url = driver.current_url
-        # assert actual_url == "https://www.saucedemo.com/inventory.htmls"
-
-        # time.sleep(2)
