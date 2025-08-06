@@ -10,6 +10,10 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.firefox.service import Service as FirefoxService
 from webdriver_manager.firefox import GeckoDriverManager
 
+# Imports to get edge driver working
+from selenium.webdriver.edge.service import Service as EdgeService
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
+
 # Import options for headless mode
 from selenium.webdriver.chrome.options import Options
 
@@ -34,6 +38,8 @@ def driver(request):
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     elif browser == "firefox":
         driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
+    elif browser == "edge":
+        driver = webdriver.Edge(service=EdgeService(EdgeChromiumDriverManager().install()))
     # Implicit wait setup for our framework
     driver.implicitly_wait(10)
     yield driver

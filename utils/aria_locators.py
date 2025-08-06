@@ -1,5 +1,5 @@
 """
-ARIA role locators for Selenium - brings Playwright's getByRole() to Selenium
+ARIA role locators for Selenium - brings getByRole() to Selenium
 
 This module provides a clean way to find elements by their accessibility roles,
 making tests more readable and resilient to UI changes.
@@ -52,7 +52,7 @@ class AccessibilityTreeError(WebDriverException):
 
 class ARIARoleLocator:
     """
-    Find elements by their ARIA roles, just like Playwright's getByRole().
+    Find elements by their ARIA roles.
     
     This works in two ways:
     1. First tries to read the browser's accessibility tree (most accurate)

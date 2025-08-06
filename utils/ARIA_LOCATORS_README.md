@@ -1,6 +1,6 @@
 # ARIA Role Locators for Selenium
 
-A clean Python implementation that brings Playwright's `getByRole()` functionality to Selenium WebDriver.
+A clean Python implementation that brings `getByRole()` functionality to Selenium WebDriver.
 
 ## Project Structure
 
@@ -144,16 +144,6 @@ pytest tests/test_professional_locators.py -v -s
 - **Configure Appropriately**: Disable accessibility tree if not needed
 - **Use Type-Safe Enums**: Better IDE support and performance
 
-## Comparison with Playwright
-
-| Feature | Playwright | This Implementation |
-|---------|------------|-------------------|
-| Role-based selection | ✅ | ✅ |
-| Accessible name | ✅ | ✅ |
-| Type safety | ✅ | ✅ |
-| Error messages | ✅ | ✅ |
-| Configuration | ✅ | ✅ |
-| DOM fallback | ✅ | ✅ |
 
 ## Requirements
 
