@@ -16,10 +16,10 @@ class TestLoginPage:
     """Test login functionality using modern ARIA role locators"""
     
     def test_login_using_single_element_lookup(self, driver):
-        """Test login flow using driver.find_element_by_role() - clean and direct"""
+        """Test the basic functionality - this was the first test I wrote"""
         driver.get("https://v0-imagine-deals.vercel.app")
         
-        # Modern syntax - clean and natural
+        # This is so much cleaner than CSS selectors!
         username_input = driver.find_element_by_role("textbox", name="Username")
         username_input.send_keys("test_user")
         

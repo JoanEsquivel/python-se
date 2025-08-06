@@ -1,8 +1,8 @@
 """
-ARIA role locators for Selenium - brings getByRole() to Selenium
+ARIA role locators for Selenium - my attempt at bringing getByRole() to Selenium
 
-This module provides a clean way to find elements by their accessibility roles,
-making tests more readable and resilient to UI changes.
+This was inspired by Playwright's getByRole() - always thought Selenium should have this.
+Works pretty well but probably needs some refinement.
 """
 
 from __future__ import annotations
