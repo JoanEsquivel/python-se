@@ -1,3 +1,4 @@
 reports
 .pytest_cache
-
+tests/__pycache__
+utils/__pycache__

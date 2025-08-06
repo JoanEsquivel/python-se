@@ -1,6 +1,10 @@
 import pytest
 from selenium.webdriver.common.by import By
-from accessibility_utils import find_elements_by_role, find_element_by_role
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from utils import find_elements_by_role, find_element_by_role
 
 
 class TestLoginPage:
@@ -22,9 +26,9 @@ class TestLoginPage:
 
         driver.get('https://www.w3.org/WAI/ARIA/apg/patterns/button/examples/button/')
 
-        # Find and click button (using singular function)
-        print_button = find_element_by_role(driver, "button", name="Print Page")
-        print_button.click()
+        # Find and click the Mute toggle button (using singular function)
+        mute_button = find_element_by_role(driver, "button", name="Mute")
+        mute_button.click()
 
     def test_login_using_plural_function(self, driver):
         """Test using find_elements_by_role (plural) - more explicit about multiple elements"""
@@ -48,11 +52,11 @@ class TestLoginPage:
 
         driver.get('https://www.w3.org/WAI/ARIA/apg/patterns/button/examples/button/')
 
-        # Find and click button (using plural function)
-        button_elements = find_elements_by_role(driver, "button", name="Print Page")
-        assert len(button_elements) > 0, "No button elements with name 'Print Page' found"
-        print_button = button_elements[0]  # Get the first matching element
-        print_button.click()
+        # Find and click the Mute toggle button (using plural function)
+        button_elements = find_elements_by_role(driver, "button", name="Mute")
+        assert len(button_elements) > 0, "No button elements with name 'Mute' found"
+        mute_button = button_elements[0]  # Get the first matching element
+        mute_button.click()
         
         # Additional verification: check how many buttons exist on the page
         all_buttons = find_elements_by_role(driver, "button")
