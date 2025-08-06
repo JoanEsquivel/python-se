@@ -27,7 +27,7 @@ def driver(request):
     driver = ""
     # Option setup to run in headless mode (in order to run this in GH Actions)
     options = Options()
-    options.add_argument('--headless')
+    # options.add_argument('--headless')
     # Setup
     print(f"\nSetting up: {browser} driver")
     if browser == "chrome":
