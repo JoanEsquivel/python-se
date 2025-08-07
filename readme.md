@@ -109,10 +109,14 @@ pytest tests/ -v -s
 
 ## 🔧 **How It Works**
 
-1. **Import utils**: Automatically installs `find_element_by_role()` and `find_elements_by_role()` methods on WebDriver
-2. **ARIA Role Detection**: Uses Chrome DevTools Protocol to access accessibility tree
-3. **DOM Fallback**: Falls back to CSS selectors with intelligent accessible name resolution
-4. **Natural API**: Works just like native Selenium methods (`find_element_by_id`, `find_element_by_class_name`, etc.)
+Smart three-tier approach for maximum compatibility and future-proofing:
+
+1. **WebDriver BiDi** (W3C Standard): Uses native accessibility locators when available
+2. **CDP Fallback**: Chrome DevTools Protocol for older Selenium versions  
+3. **DOM Parsing**: CSS selectors with intelligent accessible name resolution
+4. **Natural API**: Works just like native Selenium methods (`find_element_by_id`, etc.)
+
+The implementation automatically detects which method to use and degrades gracefully.
 
 ## ⚙️ **Requirements**
 

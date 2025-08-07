@@ -18,6 +18,8 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, WebDriverException
 
+from .bidi_locators import BiDiAccessibilityLocator, BiDiNotAvailableError, is_bidi_accessibility_available
+
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +94,14 @@ class ARIARoleLocator:
         self.driver = driver
         self.config = config or LocatorConfig()
         
+        # Check if native BiDi accessibility is available
+        self.bidi_locator = None
+        if is_bidi_accessibility_available(driver):
+            self.bidi_locator = BiDiAccessibilityLocator(driver)
+            logger.debug("Using native BiDi accessibility locators")
+        else:
+            logger.debug("BiDi not available, using CDP/DOM fallback")
+        
         if self.config.debug_mode:
             logging.basicConfig(level=logging.DEBUG)
 
@@ -103,6 +113,11 @@ class ARIARoleLocator:
     ) -> List[WebElement]:
         """
         Find all elements with the given role.
+        
+        Priority order:
+        1. Native BiDi accessibility locators (W3C standard)
+        2. CDP accessibility tree (fallback for older versions)
+        3. DOM CSS selectors (fallback for compatibility)
         
         Args:
             role: What kind of element to look for (button, textbox, etc.)
@@ -121,18 +136,34 @@ class ARIARoleLocator:
         
         elements: List[WebElement] = []
         
-        # Try the accessibility tree first - it's more accurate
+        # Step 1: Try native BiDi accessibility locators first (the future!)
+        if self.bidi_locator:
+            try:
+                elements = self.bidi_locator.find_elements(role_value, name, **filters)
+                logger.debug(f"BiDi accessibility found {len(elements)} elements")
+                if elements:
+                    return elements
+            except BiDiNotAvailableError as e:
+                logger.debug(f"BiDi not available: {e}")
+                # Disable BiDi for future calls in this session
+                self.bidi_locator = None
+            except Exception as e:
+                logger.warning(f"BiDi accessibility failed: {e}")
+        
+        # Step 2: Try CDP accessibility tree (current implementation)
         if self.config.use_accessibility_tree:
             try:
                 elements = self._find_via_accessibility_tree(role_value, filters)
-                logger.debug(f"Accessibility tree found {len(elements)} elements")
+                logger.debug(f"CDP accessibility tree found {len(elements)} elements")
+                if elements:
+                    return elements
             except Exception as e:
-                logger.warning(f"Accessibility tree failed: {e}")
+                logger.warning(f"CDP accessibility tree failed: {e}")
                 if not self.config.fallback_to_dom:
                     raise AccessibilityTreeError(f"Accessibility tree failed: {e}")
         
-        # If that didn't work, try CSS selectors
-        if not elements and self.config.fallback_to_dom:
+        # Step 3: Fall back to DOM CSS selectors (compatibility mode)
+        if self.config.fallback_to_dom:
             elements = self._find_via_dom(role_value, filters)
             logger.debug(f"DOM search found {len(elements)} elements")
             
