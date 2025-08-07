@@ -32,6 +32,9 @@ def driver(request):
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         
+        # ✅ Enable BiDi for accessibility locators
+        chrome_options.set_capability("webSocketUrl", True)
+        
         # Modern approach: Use Selenium Manager (no webdriver-manager needed)
         driver = webdriver.Chrome(options=chrome_options)
         
@@ -39,6 +42,9 @@ def driver(request):
         # Firefox options setup for headless mode
         firefox_options = FirefoxOptions()
         firefox_options.add_argument('--headless')
+        
+        # ✅ Enable BiDi for accessibility locators
+        firefox_options.set_capability("webSocketUrl", True)
         
         # Modern approach: Use Selenium Manager (no webdriver-manager needed)
         driver = webdriver.Firefox(options=firefox_options)
@@ -49,6 +55,9 @@ def driver(request):
         edge_options.add_argument('--headless')
         edge_options.add_argument('--no-sandbox')
         edge_options.add_argument('--disable-dev-shm-usage')
+        
+        # ✅ Enable BiDi for accessibility locators
+        edge_options.set_capability("webSocketUrl", True)
         
         # Modern approach: Use Selenium Manager with Microsoft's official mirror
         os.environ["SE_DRIVER_MIRROR_URL"] = "https://msedgedriver.microsoft.com"
