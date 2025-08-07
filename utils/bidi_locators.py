@@ -277,12 +277,14 @@ class BiDiAccessibilityLocator:
         )
         return {"nodes": nodes}
     
+    # I am not sure if this is necessary, I think it is not, but leaving the code for reference
     def _try_direct_bidi_command(self, method: str, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Try executing via direct BiDi command interface (future Selenium versions)."""
         if not hasattr(self.driver, 'execute_bidi_command'):
             return None
         return self.driver.execute_bidi_command(method, params)
     
+    # This could be skipped as well...
     def _try_legacy_bidi_connection(self, method: str, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Try executing via legacy bidi_connection interface."""
         if not hasattr(self.driver, 'bidi_connection'):
@@ -294,6 +296,7 @@ class BiDiAccessibilityLocator:
         elif hasattr(bidi_conn, 'send'):
             return bidi_conn.send(method, params)
         return None
+    
     
     def _try_cdp_bridge(self, method: str, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Try executing via CDP bridge (experimental fallback)."""
