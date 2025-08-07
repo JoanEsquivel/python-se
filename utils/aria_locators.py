@@ -18,6 +18,8 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, WebDriverException
 
+from .bidi_locators import BiDiAccessibilityLocator, BiDiNotAvailableError, is_bidi_accessibility_available
+
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +94,14 @@ class ARIARoleLocator:
         self.driver = driver
         self.config = config or LocatorConfig()
         
+        # Check if native BiDi accessibility is available
+        self.bidi_locator = None
+        if is_bidi_accessibility_available(driver):
+            self.bidi_locator = BiDiAccessibilityLocator(driver)
+            logger.debug("Using native BiDi accessibility locators")
+        else:
+            logger.debug("BiDi not available, using CDP/DOM fallback")
+        
         if self.config.debug_mode:
             logging.basicConfig(level=logging.DEBUG)
 
@@ -103,6 +113,11 @@ class ARIARoleLocator:
     ) -> List[WebElement]:
         """
         Find all elements with the given role.
+        
+        Priority order:
+        1. Native BiDi accessibility locators (W3C standard)
+        2. CDP accessibility tree (fallback for older versions)
+        3. DOM CSS selectors (fallback for compatibility)
         
         Args:
             role: What kind of element to look for (button, textbox, etc.)
@@ -121,18 +136,34 @@ class ARIARoleLocator:
         
         elements: List[WebElement] = []
         
-        # Try the accessibility tree first - it's more accurate
+        # Step 1: Try native BiDi accessibility locators first (the future!)
+        if self.bidi_locator:
+            try:
+                elements = self.bidi_locator.find_elements(role_value, name, **filters)
+                logger.debug(f"BiDi accessibility found {len(elements)} elements")
+                if elements:
+                    return elements
+            except BiDiNotAvailableError as e:
+                logger.debug(f"BiDi not available: {e}")
+                # Disable BiDi for future calls in this session
+                self.bidi_locator = None
+            except Exception as e:
+                logger.warning(f"BiDi accessibility failed: {e}")
+        
+        # Step 2: Try CDP accessibility tree (current implementation)
         if self.config.use_accessibility_tree:
             try:
                 elements = self._find_via_accessibility_tree(role_value, filters)
-                logger.debug(f"Accessibility tree found {len(elements)} elements")
+                logger.debug(f"CDP accessibility tree found {len(elements)} elements")
+                if elements:
+                    return elements
             except Exception as e:
-                logger.warning(f"Accessibility tree failed: {e}")
+                logger.warning(f"CDP accessibility tree failed: {e}")
                 if not self.config.fallback_to_dom:
                     raise AccessibilityTreeError(f"Accessibility tree failed: {e}")
         
-        # If that didn't work, try CSS selectors
-        if not elements and self.config.fallback_to_dom:
+        # Step 3: Fall back to DOM CSS selectors (compatibility mode)
+        if self.config.fallback_to_dom:
             elements = self._find_via_dom(role_value, filters)
             logger.debug(f"DOM search found {len(elements)} elements")
             
@@ -365,21 +396,124 @@ class ARIARoleLocator:
         try:
             backend_id = node["backendDOMNodeId"]
             
-            # Get the DOM node info
-            described = self.driver.execute_cdp_cmd("DOM.describeNode", {
-                "backendNodeId": backend_id
-            })
-            node_id = described["node"]["nodeId"]
+            # Method 1: Try direct backend node resolution
+            try:
+                resolved = self.driver.execute_cdp_cmd("DOM.resolveNode", {
+                    "backendNodeId": backend_id
+                })
+                if "object" in resolved:
+                    element = self.driver.execute_script("return arguments[0];", resolved["object"])
+                    if element:
+                        return element
+            except:
+                pass  # Try alternative methods
             
-            # Convert to a JavaScript object we can use
-            resolved = self.driver.execute_cdp_cmd("DOM.resolveNode", {
-                "nodeId": node_id
-            })
+            # Method 2: Use DOM.describeNode to get attributes and find via CSS
+            try:
+                described = self.driver.execute_cdp_cmd("DOM.describeNode", {
+                    "backendNodeId": backend_id
+                })
+                node_info = described.get("node", {})
+                
+                # Build CSS selector from node attributes
+                selector = self._build_selector_from_node(node_info)
+                if selector:
+                    elements = self.driver.find_elements("css selector", selector)
+                    if elements:
+                        return elements[0]  # Return first match
+                        
+            except Exception as e:
+                logger.debug(f"Method 2 failed: {e}")
             
-            return self.driver.execute_script("return arguments[0];", resolved["object"])
+            # Method 3: Use JavaScript to find element by matching attributes
+            try:
+                described = self.driver.execute_cdp_cmd("DOM.describeNode", {
+                    "backendNodeId": backend_id
+                })
+                node_info = described.get("node", {})
+                attributes = node_info.get("attributes", [])
+                
+                # Build JavaScript to find element
+                script = self._build_find_script(node_info.get("localName", ""), attributes)
+                if script:
+                    element = self.driver.execute_script(script)
+                    if element:
+                        return element
+                        
+            except Exception as e:
+                logger.debug(f"Method 3 failed: {e}")
             
         except Exception as e:
             logger.debug(f"Couldn't convert accessibility node to element: {e}")
+            
+        return None
+    
+    def _build_selector_from_node(self, node_info: Dict[str, Any]) -> Optional[str]:
+        """Build CSS selector from DOM node information"""
+        try:
+            tag_name = node_info.get("localName", "").lower()
+            if not tag_name:
+                return None
+            
+            attributes = node_info.get("attributes", [])
+            selector_parts = [tag_name]
+            
+            # Process attributes in pairs (name, value)
+            for i in range(0, len(attributes), 2):
+                if i + 1 < len(attributes):
+                    attr_name = attributes[i]
+                    attr_value = attributes[i + 1]
+                    
+                    # Add useful attributes to selector
+                    if attr_name in ["id", "class", "name", "type", "data-testid"]:
+                        if attr_name == "id" and attr_value:
+                            selector_parts.append(f"#{attr_value}")
+                        elif attr_name == "class" and attr_value:
+                            classes = attr_value.split()
+                            for cls in classes[:2]:  # Limit to first 2 classes
+                                selector_parts.append(f".{cls}")
+                        elif attr_name in ["name", "type", "data-testid"] and attr_value:
+                            selector_parts.append(f'[{attr_name}="{attr_value}"]')
+            
+            return "".join(selector_parts) if len(selector_parts) > 1 else None
+            
+        except Exception as e:
+            logger.debug(f"Failed to build selector: {e}")
+            return None
+    
+    def _build_find_script(self, tag_name: str, attributes: List[str]) -> Optional[str]:
+        """Build JavaScript to find element by attributes"""
+        try:
+            if not tag_name:
+                return None
+            
+            conditions = [f'elem.tagName.toLowerCase() === "{tag_name.lower()}"']
+            
+            # Process attributes in pairs
+            for i in range(0, len(attributes), 2):
+                if i + 1 < len(attributes):
+                    attr_name = attributes[i]
+                    attr_value = attributes[i + 1]
+                    
+                    if attr_name in ["id", "name", "type", "data-testid"] and attr_value:
+                        conditions.append(f'elem.getAttribute("{attr_name}") === "{attr_value}"')
+            
+            if len(conditions) > 1:  # Only if we have identifying attributes
+                condition_str = " && ".join(conditions)
+                return f"""
+                const elements = document.querySelectorAll('{tag_name}');
+                for (let elem of elements) {{
+                    if ({condition_str}) {{
+                        return elem;
+                    }}
+                }}
+                return null;
+                """
+            
+            return None
+            
+        except Exception as e:
+            logger.debug(f"Failed to build find script: {e}")
             return None
 
     def _describe_filters(self, filters: Dict[str, Any]) -> str:
