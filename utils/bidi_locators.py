@@ -117,13 +117,25 @@ class BiDiAccessibilityLocator:
     def _execute_bidi_command(self, method: str, params: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a BiDi command through the active connection"""
         try:
-            # This is how you'd execute BiDi commands in modern Selenium
-            # The exact API might vary slightly depending on version
+            # Method 1: Direct BiDi command execution (future Selenium versions)
             if hasattr(self.driver, 'execute_bidi_command'):
                 return self.driver.execute_bidi_command(method, params)
+            
+            # Method 2: BiDi connection property (current approach)
             elif hasattr(self.driver, 'bidi_connection'):
-                # Alternative approach for different Selenium versions
-                return self.driver.bidi_connection.execute(method, params)
+                # Get the actual BiDi connection
+                bidi_conn = self.driver.bidi_connection()  # Call it as a method
+                if hasattr(bidi_conn, 'execute'):
+                    return bidi_conn.execute(method, params)
+                elif hasattr(bidi_conn, 'send'):
+                    return bidi_conn.send(method, params)
+                else:
+                    raise BiDiNotAvailableError("BiDi connection exists but has no execute/send method")
+            
+            # Method 3: Try using CDP as BiDi bridge (experimental)
+            elif hasattr(self.driver, 'execute_cdp_cmd'):
+                return self._execute_bidi_via_cdp(method, params)
+            
             else:
                 raise BiDiNotAvailableError("No BiDi execution method available")
                 
@@ -202,6 +214,69 @@ class BiDiAccessibilityLocator:
             logger.debug(f"Failed to handle script result: {e}")
             
         return None
+    
+    def _execute_bidi_via_cdp(self, method: str, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Experimental: Execute BiDi commands via CDP bridge"""
+        logger.debug(f"Attempting BiDi command '{method}' via CDP bridge")
+        
+        if method == "browsingContext.locateNodes":
+            # Convert BiDi locateNodes to CDP accessibility search
+            context_id = params.get("context")
+            locator = params.get("locator", {})
+            
+            if locator.get("type") == "accessibility":
+                # Use CDP Accessibility to find nodes
+                try:
+                    # Enable accessibility domain
+                    self.driver.execute_cdp_cmd("Accessibility.enable", {})
+                    
+                    # Get accessibility tree
+                    tree_result = self.driver.execute_cdp_cmd("Accessibility.getFullAXTree", {})
+                    
+                    # Filter nodes by accessibility criteria
+                    matching_nodes = self._filter_accessibility_nodes(
+                        tree_result.get("nodes", []), 
+                        locator.get("value", {})
+                    )
+                    
+                    return {"nodes": matching_nodes}
+                    
+                except Exception as e:
+                    logger.debug(f"CDP accessibility bridge failed: {e}")
+                    raise BiDiNotAvailableError(f"CDP bridge failed: {e}")
+        
+        raise BiDiNotAvailableError(f"BiDi command '{method}' not supported via CDP bridge")
+    
+    def _filter_accessibility_nodes(self, nodes: List[Dict], criteria: Dict[str, Any]) -> List[Dict]:
+        """Filter accessibility tree nodes by BiDi criteria"""
+        matching = []
+        
+        for node in nodes:
+            # Check role matching
+            role_match = True
+            if "role" in criteria:
+                node_role = node.get("role", {})
+                expected_role = criteria["role"]
+                
+                # Handle different role formats
+                if node_role.get("value") != expected_role and node_role.get("type") != expected_role:
+                    role_match = False
+            
+            # Check name matching  
+            name_match = True
+            if "name" in criteria:
+                node_name = node.get("name", {})
+                expected_name = criteria["name"]
+                actual_name = node_name.get("value", "")
+                
+                if expected_name.lower() not in actual_name.lower():
+                    name_match = False
+            
+            if role_match and name_match:
+                matching.append(node)
+        
+        logger.debug(f"Filtered {len(matching)} nodes from {len(nodes)} total")
+        return matching
 
 
 def is_bidi_accessibility_available(driver: WebDriver) -> bool:
