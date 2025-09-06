@@ -159,12 +159,12 @@ class BiDiAccessibilityLocator:
             # Get current browsing context
             context_id = self.driver.current_window_handle
             
-            # Build BiDi accessibility locator
+            # Build BiDi accessibility locator - use PURE BiDi approach
             locator_value = {"role": role}
             if name:
                 locator_value["name"] = name
             
-            # Use native BiDi locateNodes with accessibility locator
+            # Use native BiDi locateNodes with accessibility locator (PURE BiDi!)
             result = self.driver.browsing_context.locate_nodes(
                 context=context_id,
                 locator={
@@ -177,7 +177,8 @@ class BiDiAccessibilityLocator:
             # Convert BiDi node references to WebElements
             elements = self._convert_nodes_to_elements(result)
             
-            logger.debug(f"✅ Found {len(elements)} elements with role '{role}'")
+            logger.debug(f"✅ Found {len(elements)} elements with role '{role}'" + 
+                        (f" and name '{name}'" if name else ""))
             return elements
             
         except Exception as e:
@@ -204,7 +205,7 @@ class BiDiAccessibilityLocator:
             NoSuchElementException: If no element is found
             BiDiAccessibilityError: If element location fails
         """
-        elements = self.find_elements_by_role(role, name, max_count=1)
+        elements = self.find_elements_by_role(role, name, max_count=100)
         
         if not elements:
             criteria = f"role='{role}'"
@@ -274,8 +275,7 @@ class BiDiAccessibilityLocator:
         except Exception as e:
             logger.debug(f"Failed to create element from shared ID {shared_id}: {e}")
             return None
-
-
+    
 def create_bidi_locator(driver: WebDriver) -> BiDiAccessibilityLocator:
     """
     Factory function to create a BiDi accessibility locator.
